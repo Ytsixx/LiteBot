@@ -122,6 +122,42 @@ async function startBot() {
 
   break;
 }
+
+case 'documento': {
+  await liteBot.sendMessage(from, {
+    document: { url: './media/teste.xlsx' },
+    mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    fileName: 'teste.xlsx'
+  });
+
+  break;
+}
+
+import axios from 'axios';
+
+case 'audio': {
+  try {
+    const api = 'https://acodex.fluxdev.site/api/download/ytmp?type=mp3&titulo='+q;
+
+    const { data } = await axios.get(api);
+    const audioUrl = data.data.download;
+
+    const audio = await axios.get(audioUrl, {
+      responseType: 'arraybuffer'
+    });
+
+    await liteBot.sendMessage(from, {
+      audio: Buffer.from(audio.data),
+      mimetype: 'audio/mpeg',
+      ptt: true // 🔥 vira áudio estilo WhatsApp (voz)
+    });
+
+  } catch (err) {
+    console.log('Erro:', err);
+  }
+
+  break;
+}
         
         
         
