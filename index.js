@@ -123,7 +123,7 @@ async function startBot() {
       // ─── Ignorar status e newsletter ──────────────────────────────────────
       if (isStatus || isNewsletter) return;
 
-      const type     = func.getMessageType(info);
+      const type     = await func.getMessageType(info);
       const body     = await func.getBody(info, type);
       const pushname = info.pushName;
       const sender   = isGroup ? info.key.participant : info.key.remoteJid;
