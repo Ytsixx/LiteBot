@@ -111,11 +111,10 @@ async function startBot() {
   break;
             
           };
-        
+          
           case 'imagem': {
-  const caminhoImagem = './media/teste.jpg'; // caminho da tua imagem 
+  const caminhoImagem = './media/teste.jpeg'; // caminho da tua imagem
 
- 
   await liteBot.sendMessage(from, {
     image: { url: caminhoImagem },
     caption: `🖼️ Teste de imagem\n\nOlá, ${pushname}!`

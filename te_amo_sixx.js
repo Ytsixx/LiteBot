@@ -6,7 +6,7 @@ import chalk from 'chalk';
 // ─── Configuração ─────────────────────────────────────────────────────────────
 const CONFIG = {
   entryFile: './index.js',
-  watchPaths: ['./src', './lib', './index.js', './config/'],
+  watchPaths: ['./src', './lib', './index.js', './config', 'media'],
   watchExtensions: ['.js', '.mjs', '.json', '.cjs'],
   debounceMs: 5000,
   showChildLogs: true,
