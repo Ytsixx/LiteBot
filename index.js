@@ -8,7 +8,6 @@ import qrcode from 'qrcode-terminal'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import axios from 'axios';
-
 const {
   makeWASocket,
   useMultiFileAuthState,

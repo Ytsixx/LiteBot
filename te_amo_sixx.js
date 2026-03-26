@@ -35,20 +35,30 @@ function formatUptime() {
   return `${m}m ${s}s`;
 }
 
-// ─── Git auto-commit ──────────────────────────────────────────────────────────
+// ─── Git auto-commit (VERSÃO CORRIGIDA E MELHORADA) ──────────────────────────
 function gitCommitAndPush() {
   try {
-    // Verifica se há alterações para commitar
-    const status = execSync('git status --porcelain').toString().trim();
-    if (!status) {
+    // 1. Adiciona TODAS as alterações (novos ficheiros, modificados e deletados)
+    log.git('A fazer git add -A...');
+    execSync('git add -A', { stdio: 'ignore' });
+
+    // 2. Verifica se realmente há algo para commitar
+    try {
+      execSync('git diff --cached --quiet', { stdio: 'ignore' });
       log.git('Sem alterações para commitar.');
       return;
+    } catch {
+      // Se chegou aqui → existem alterações staged → vamos commitar
     }
 
     const now = new Date();
     const timestamp = now.toLocaleString('pt-PT', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     });
 
     const comentarios = [
@@ -60,14 +70,11 @@ function gitCommitAndPush() {
     ];
     const mensagem = comentarios[Math.floor(Math.random() * comentarios.length)];
 
-    log.git('A fazer git add...');
-    execSync('git add .');
-
     log.git(`A commitar: "${mensagem}"`);
-    execSync(`git commit -m "${mensagem}"`);
+    execSync(`git commit -m "${mensagem}"`, { stdio: 'ignore' });
 
     log.git('A fazer git push...');
-    execSync('git push');
+    execSync('git push', { stdio: 'ignore' });
 
     log.git(chalk.green('✅ Push concluído com sucesso!'));
   } catch (err) {
@@ -139,7 +146,7 @@ function restartBot(changedFile) {
   log.info(`Uptime anterior: ${formatUptime()}`);
 
   stopBot(() => {
-    // 1. Commita e faz push
+    // 1. Commita e faz push (agora funciona sempre que houver mudanças)
     gitCommitAndPush();
 
     // 2. Só depois reinicia o bot
