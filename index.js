@@ -158,6 +158,24 @@ case 'audio': {
 
   break;
 }
+case 'video': {
+  try {
+    const api = 'https://acodex.fluxdev.site/api/download/ytmp?type=mp4&titulo='+q;
+
+    const { data } = await axios.get(api);
+
+    await liteBot.sendMessage(from, {
+      video: { url: data.data.download },
+      mimetype: 'video/mp4',
+      caption: `🎬 ${data.data.title}`
+    });
+
+  } catch (err) {
+    console.log('Erro:', err);
+  }
+
+  break;
+}
         
         
         
