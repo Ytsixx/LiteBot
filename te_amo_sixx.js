@@ -1,16 +1,11 @@
+import './config/configuracaos.js'
 import fs from 'fs';
 import path from 'path';
 import { spawn, execSync } from 'child_process';
 import chalk from 'chalk';
 
 // ─── Configuração ─────────────────────────────────────────────────────────────
-const CONFIG = {
-  entryFile: './index.js',
-  watchPaths: ['./src', './lib', './index.js', './config', 'media'],
-  watchExtensions: ['.js', '.mjs', '.json', '.cjs'],
-  debounceMs: 5000,
-  showChildLogs: true,
-};
+const CONFIG = config.atualisacao
 
 // ─── Estado ───────────────────────────────────────────────────────────────────
 let botProcess = null;
