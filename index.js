@@ -7,6 +7,7 @@ import chalk from 'chalk'
 import qrcode from 'qrcode-terminal'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import axios from 'axios';
 
 const {
   makeWASocket,
@@ -133,7 +134,7 @@ case 'documento': {
   break;
 }
 
-import axios from 'axios';
+
 
 case 'audio': {
   try {
