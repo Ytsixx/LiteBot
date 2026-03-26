@@ -273,7 +273,7 @@ case 's': {
           ? info.quoted.message?.stickerMessage
           : info.message?.stickerMessage
     // Baixa a mídia da mensagem
-    const media = await liteBot.downloadMediaMessage(alvo);
+    const media = await func.getBaixarMsg(alvo);
 
     // Converte para sticker usando ffsixx
     const ffsixx = require('ffsixx');
