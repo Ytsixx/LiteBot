@@ -1,6 +1,8 @@
 import './lib/func.js';
 import './config/configuracaos.js';
 import * as baileys from '@sixcore/baileys';
+import { createRequire }      from 'module'
+const require    = createRequire(import.meta.url)
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import chalk from 'chalk';
@@ -263,21 +265,36 @@ async function startBot() {
 
         // ── Sticker ────────────────────────────────────────────────────────────
         case 'sticker':
-        case 's': {
-          if (!mime.startsWith('image/')) {
-            return reply(liteBot, from, '❌ Responde ou envia uma imagem para criar sticker.', info);
-          }
+case 's': {
+  if (!mime.startsWith('image/')) {
+    return reply(liteBot, from, '❌ Responde ou envia uma imagem para criar sticker.', info);
+  }
 
-          try {
-            await react(liteBot, key, '🎨');
-            const media = await liteBot.downloadMediaMessage(quoted);
-            await liteBot.sendMessage(from, { sticker: media });
-          } catch (err) {
-            console.error('[sticker] Erro:', err.message);
-            await reply(liteBot, from, '❌ Erro ao criar sticker.', info);
-          }
-          break;
-        }
+  try {
+    await react(liteBot, key, '🎨');
+
+    // Baixa a mídia da mensagem
+    const media = await liteBot.downloadMediaMessage(quoted);
+
+    // Converte para sticker usando ffsixx
+    const ffsixx = require('ffsixx');
+    const stickerBuffer = await ffsixx.sticker(media, {
+      pack: 'LenaBot',        // Nome do pack do sticker
+      author: 'SixxHxRx.js',  // Autor
+      resize: true,            // Redimensiona automaticamente
+      crop: true               // Corta se necessário
+    });
+
+    // Envia o sticker
+    await liteBot.sendMessage(from, { sticker: stickerBuffer });
+
+  } catch (err) {
+    console.error('[sticker] Erro:', err.message);
+    await reply(liteBot, from, '❌ Erro ao criar sticker.', info);
+  }
+
+  break;
+}
 
         // ── Mencionar todos ────────────────────────────────────────────────────
         case 'todos':
