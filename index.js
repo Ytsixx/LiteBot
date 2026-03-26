@@ -112,6 +112,7 @@ async function startBot() {
     liteBot.ev.on('messages.upsert', async ({ messages }) => {
       const info = messages[0];
       if (!info.message || info.key.fromMe) return;
+      console.log(info)
 
       const from = info.key.remoteJid;
 
