@@ -1,72 +1,72 @@
-import './config/configuracaos.js'
+import './config/configuracaos.js';
 import fs from 'fs';
 import path from 'path';
 import { spawn, execSync } from 'child_process';
 import chalk from 'chalk';
 
 // ─── Configuração ─────────────────────────────────────────────────────────────
-const CONFIG = config.atualisacao
+const CONFIG = config.atualizacao;
 
 // ─── Estado ───────────────────────────────────────────────────────────────────
-let botProcess = null;
-let restartTimer = null;
-let isRestarting = false;
-let startTime = Date.now();
+let botProcess    = null;
+let restartTimer  = null;
+let isRestarting  = false;
+let startTime     = Date.now();
+let totalRestarts = 0;
+let crashCount    = 0;
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 const log = {
   info:    (msg) => console.log(chalk.cyan(`[WATCHER] ${msg}`)),
   success: (msg) => console.log(chalk.green(`[WATCHER] ${msg}`)),
-  warn:    (msg) => console.log(chalk.yellow(`[WATCHER]  ${msg}`)),
-  error:   (msg) => console.log(chalk.red(`[WATCHER] ${msg}`)),
+  warn:    (msg) => console.log(chalk.yellow(`[WATCHER] ⚠ ${msg}`)),
+  error:   (msg) => console.log(chalk.red(`[WATCHER] ✖ ${msg}`)),
   change:  (msg) => console.log(chalk.magenta(`[WATCHER] ${msg}`)),
   git:     (msg) => console.log(chalk.blue(`[GIT]     ${msg}`)),
 };
 
 function formatUptime() {
   const seconds = Math.floor((Date.now() - startTime) / 1000);
-  const m = Math.floor(seconds / 60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  return `${m}m ${s}s`;
+  return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
 }
 
-// ─── Git auto-commit (VERSÃO CORRIGIDA E MELHORADA) ──────────────────────────
+function timestamp() {
+  return new Date().toLocaleString('pt-PT', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+}
+
+// ─── Git auto-commit & push ───────────────────────────────────────────────────
 function gitCommitAndPush() {
+  if (!CONFIG.gitAutoCommit) return;
+
   try {
-    // 1. Adiciona TODAS as alterações (novos ficheiros, modificados e deletados)
-    log.git('A fazer git add -A...');
+    log.git('A verificar alterações...');
     execSync('git add -A', { stdio: 'ignore' });
 
-    // 2. Verifica se realmente há algo para commitar
     try {
       execSync('git diff --cached --quiet', { stdio: 'ignore' });
       log.git('Sem alterações para commitar.');
       return;
     } catch {
-      // Se chegou aqui → existem alterações staged → vamos commitar
+      // há alterações staged → prosseguir
     }
 
-    const now = new Date();
-    const timestamp = now.toLocaleString('pt-PT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-
-    const comentarios = [
-      `🔧 atualização automática – ${timestamp}`,
-      `🚀 deploy automático – ${timestamp}`,
-      `⚡ mudanças salvas – ${timestamp}`,
-      `🛠️ ajustes no bot – ${timestamp}`,
-      `📦 novo update – ${timestamp}`,
+    const mensagens = [
+      `🔧 atualização automática – ${timestamp()}`,
+      `🚀 deploy automático – ${timestamp()}`,
+      `⚡ mudanças salvas – ${timestamp()}`,
+      `🛠️ ajustes no bot – ${timestamp()}`,
+      `📦 novo update – ${timestamp()}`,
     ];
-    const mensagem = comentarios[Math.floor(Math.random() * comentarios.length)];
+    const msg = mensagens[Math.floor(Math.random() * mensagens.length)];
 
-    log.git(`A commitar: "${mensagem}"`);
-    execSync(`git commit -m "${mensagem}"`, { stdio: 'ignore' });
+    log.git(`A commitar: "${msg}"`);
+    execSync(`git commit -m "${msg}"`, { stdio: 'ignore' });
 
     log.git('A fazer git push...');
     execSync('git push', { stdio: 'ignore' });
@@ -80,10 +80,17 @@ function gitCommitAndPush() {
 // ─── Iniciar processo do bot ──────────────────────────────────────────────────
 function startBot() {
   if (isRestarting) return;
-  isRestarting = true;
-  startTime = Date.now();
 
-  log.info(`A iniciar o bot → ${CONFIG.entryFile}`);
+  // Limite de restarts por crash
+  if (CONFIG.restartOnCrash && crashCount >= CONFIG.maxRestarts) {
+    log.error(`Limite de ${CONFIG.maxRestarts} restarts por crash atingido. Encerrando watcher.`);
+    process.exit(1);
+  }
+
+  isRestarting = true;
+  startTime    = Date.now();
+
+  log.info(`A iniciar o bot → ${chalk.yellow(CONFIG.entryFile)}`);
 
   botProcess = spawn('node', ['--experimental-vm-modules', CONFIG.entryFile], {
     stdio: CONFIG.showChildLogs ? ['inherit', 'inherit', 'inherit'] : 'ignore',
@@ -92,7 +99,8 @@ function startBot() {
 
   botProcess.on('spawn', () => {
     isRestarting = false;
-    log.success(`Bot iniciado! PID: ${botProcess.pid}`);
+    crashCount   = 0; // reset ao iniciar com sucesso
+    log.success(`Bot iniciado! PID: ${chalk.yellow(botProcess.pid)} | Restarts: ${totalRestarts}`);
   });
 
   botProcess.on('error', (err) => {
@@ -103,9 +111,14 @@ function startBot() {
   botProcess.on('exit', (code, signal) => {
     isRestarting = false;
     if (signal === 'SIGTERM') return;
+
     if (code !== 0 && code !== null) {
-      log.warn(`Bot encerrou com código ${code}. A reiniciar em 3s...`);
-      setTimeout(startBot, 3000);
+      crashCount++;
+      totalRestarts++;
+      log.warn(`Bot encerrou com código ${code}. (crash ${crashCount}/${CONFIG.maxRestarts}) Reiniciando em ${CONFIG.restartDelayMs / 1000}s...`);
+      if (CONFIG.restartOnCrash) {
+        setTimeout(startBot, CONFIG.restartDelayMs);
+      }
     }
   });
 }
@@ -123,7 +136,7 @@ function stopBot(callback) {
 
   const forceKill = setTimeout(() => {
     if (botProcess) {
-      log.error('Forçando encerramento (SIGKILL)...');
+      log.error('Timeout — forçando encerramento (SIGKILL)...');
       botProcess.kill('SIGKILL');
     }
   }, 5000);
@@ -139,12 +152,10 @@ function stopBot(callback) {
 function restartBot(changedFile) {
   log.change(`Alteração detetada: ${chalk.yellow(changedFile)}`);
   log.info(`Uptime anterior: ${formatUptime()}`);
+  totalRestarts++;
 
   stopBot(() => {
-    // 1. Commita e faz push (agora funciona sempre que houver mudanças)
     gitCommitAndPush();
-
-    // 2. Só depois reinicia o bot
     log.info('Reiniciando bot...\n');
     console.log(chalk.gray('─'.repeat(50)));
     startBot();
@@ -154,15 +165,13 @@ function restartBot(changedFile) {
 // ─── Debounce ─────────────────────────────────────────────────────────────────
 function scheduleRestart(filePath) {
   if (restartTimer) clearTimeout(restartTimer);
-  restartTimer = setTimeout(() => {
-    restartBot(filePath);
-  }, CONFIG.debounceMs);
+  restartTimer = setTimeout(() => restartBot(filePath), CONFIG.debounceMs);
 }
 
 // ─── Monitorizar ficheiros ────────────────────────────────────────────────────
 function watchPath(targetPath) {
   if (!fs.existsSync(targetPath)) {
-    log.warn(`Caminho não encontrado (será ignorado): ${targetPath}`);
+    log.warn(`Caminho não encontrado (ignorado): ${chalk.yellow(targetPath)}`);
     return;
   }
 
@@ -175,12 +184,12 @@ function watchPath(targetPath) {
       if (!CONFIG.watchExtensions.includes(ext)) return;
       scheduleRestart(path.join(targetPath, filename));
     });
-    log.info(`A monitorizar pasta: ${chalk.cyan(targetPath)}`);
+    log.info(`📁 Pasta:    ${chalk.cyan(targetPath)}`);
   } else {
     fs.watch(targetPath, (event) => {
       if (event === 'change') scheduleRestart(targetPath);
     });
-    log.info(`A monitorizar ficheiro: ${chalk.cyan(targetPath)}`);
+    log.info(`📄 Ficheiro: ${chalk.cyan(targetPath)}`);
   }
 }
 
@@ -189,6 +198,7 @@ function gracefulShutdown(signal) {
   console.log('');
   log.warn(`Sinal ${signal} recebido. A encerrar...`);
   stopBot(() => {
+    log.info(`Total de restarts nesta sessão: ${totalRestarts}`);
     log.info('Watcher encerrado. Adeus! 👋');
     process.exit(0);
   });
@@ -201,11 +211,18 @@ process.on('uncaughtException', (err) => {
 });
 
 // ─── Inicialização ────────────────────────────────────────────────────────────
-log.info('Modo: Auto-restart + Git auto-commit ativado');
-log.info(`Extensões vigiadas: ${CONFIG.watchExtensions.join(', ')}`);
-log.info(`Debounce: ${CONFIG.debounceMs}ms`);
+console.log(chalk.bold.cyan('\n╔══════════════════════════════╗'));
+console.log(chalk.bold.cyan(`║  ${config.info.botNome.padEnd(28)}║`));
+console.log(chalk.bold.cyan('╚══════════════════════════════╝\n'));
+
+log.info(`Modo:       Auto-restart + Git ${CONFIG.gitAutoCommit ? chalk.green('ON') : chalk.red('OFF')}`);
+log.info(`Entry:      ${CONFIG.entryFile}`);
+log.info(`Extensões:  ${CONFIG.watchExtensions.join(', ')}`);
+log.info(`Debounce:   ${CONFIG.debounceMs}ms`);
+log.info(`Max crashes: ${CONFIG.maxRestarts}`);
 console.log('');
 
+log.info('A monitorizar:');
 CONFIG.watchPaths.forEach(watchPath);
 console.log('');
 
