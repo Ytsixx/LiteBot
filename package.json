@@ -1,0 +1,58 @@
+{
+  "name": "litebot",
+  "version": "1.0.0",
+  "description": "LiteBot é uma base leve, moderna e modular para desenvolvimento de bots em Node.js. Criado por Sixx, foca em performance, escalabilidade e organização profissional de código.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"No tests defined yet\" && exit 0",
+    "format": "prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ytsixx/LiteBot.git"
+  },
+  "keywords": [
+    "bot",
+    "nodejs",
+    "whatsapp-bot",
+    "automation",
+    "baileys",
+    "modular",
+    "litebot",
+    "sixx",
+    "framework",
+    "esm"
+  ],
+  "author": {
+    "name": "Sixx",
+    "url": "https://github.com/Ytsixx"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Ytsixx/LiteBot/issues"
+  },
+  "homepage": "https://github.com/Ytsixx/LiteBot#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@shennmine/libsignal-node": "2.0.1",
+    "@sixcore/baileys": "^1.0.1",
+    "axios": "^1.13.6",
+    "chalk": "^5.6.2",
+    "ffsixx": "^1.5.0",
+    "fs-extra": "^11.3.4",
+    "libphonenumber-js": "^1.12.40",
+    "libsignal": "npm:@shennmine/libsignal-node@2.0.1",
+    "libsignal-xeuka": "npm:@shennmine/libsignal-node@2.0.1",
+    "luxon": "^3.7.2",
+    "node-fetch": "^3.3.2",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
