@@ -266,15 +266,14 @@ async function startBot() {
         // ── Sticker ────────────────────────────────────────────────────────────
         case 'sticker':
 case 's': {
-  if (!mime.startsWith('image/')) {
-    return reply(liteBot, from, '❌ Responde ou envia uma imagem para criar sticker.', info);
-  }
+
 
   try {
-    await react(liteBot, key, '🎨');
-
+  const alvo = info.quoted
+          ? info.quoted.message?.stickerMessage
+          : info.message?.stickerMessage
     // Baixa a mídia da mensagem
-    const media = await liteBot.downloadMediaMessage(quoted);
+    const media = await liteBot.downloadMediaMessage(alvo);
 
     // Converte para sticker usando ffsixx
     const ffsixx = require('ffsixx');
