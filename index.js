@@ -267,7 +267,7 @@ async function startBot() {
         case 'sticker':
 case 's': {
 
-log(info)
+console.log(info)
   try {
   const alvo = info.quoted
           ? info.quoted.message?.stickerMessage
